@@ -52,7 +52,8 @@ public class ProdutoController {
 	@PostMapping("/")
 	public ResponseEntity<?> criarProduto(@RequestBody Produto produto) {
 		try {
-			if (produto.getNome() == null || produto.getNome().isEmpty()) {
+			if (produto.getNome().isEmpty() || produto.getImgUrl().isEmpty()
+				|| produto.getIngredientes().isEmpty() || produto.getDescription().isEmpty()	) {
 				return ResponseEntity.badRequest().body("O nome do produto não pode ser vazio.");
 			}
 
@@ -65,12 +66,38 @@ public class ProdutoController {
 		}
 	}
 
+	@PutMapping("/{id}")
+	public ResponseEntity<?> atualizarProduto(@PathVariable("id") Long id, @RequestBody Produto produto) {
+		try {
+			Optional<Produto> verificarSeExiste = repProduto.findById(id);
+
+			if (verificarSeExiste.isPresent()) {
+				Produto p = verificarSeExiste.get();
+				p.setNome(produto.getNome());
+				p.setImgUrl(produto.getImgUrl());
+				p.setPrice(produto.getPrice());
+				p.setDescription(produto.getDescription());
+				p.setIngredientes(produto.getIngredientes());
+
+				repProduto.save(p);
+
+				return ResponseEntity.ok("Produto atualizado com sucesso !");
+			} else {
+				return ResponseEntity.status(HttpStatus.NO_CONTENT)
+						.body("Produto não encontrado");
+			}
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Ocorreu um erro interno no servidor.");
+		}
+	}
+	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> deletarProduto(@PathVariable("id") Long id) {
 		try {
-			Optional<Produto> verificaExiste = repProduto.findById(id);
+			Optional<Produto> verificarSeExiste = repProduto.findById(id);
 
-			if (verificaExiste.isPresent()) {
+			if (verificarSeExiste.isPresent()) {
 				// deletar o produto
 				repProduto.deleteById(id);
 
@@ -78,33 +105,7 @@ public class ProdutoController {
 			} else {
 				// retornar mensagem que não foi encontrado
 				return ResponseEntity.status(HttpStatus.NO_CONTENT)
-						.body("Ocorreu um erro interno no servidor.");
-			}
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Ocorreu um erro interno no servidor.");
-		}
-	}
-
-	@PutMapping("/{id}")
-	public ResponseEntity<?> atualizarProduto(@PathVariable("id") Long id, @RequestBody Produto produto) {
-		try {
-			Optional<Produto> verificaExiste = repProduto.findById(id);
-
-			if (verificaExiste.isPresent()) {
-				Produto p = verificaExiste.get();
-				p.setNome(produto.getNome());
-				p.setImgUrl(produto.getImgUrl());
-				p.setPrice(produto.getPrice());
-				p.setDescription(produto.getDescription());
-				p.setIngredientes(produto.getDescription());
-
-				repProduto.save(p);
-
-				return ResponseEntity.ok(p);
-			} else {
-				return ResponseEntity.status(HttpStatus.NO_CONTENT)
-						.body("Produto não encontrado");
+						.body("Nenhum produto foi encontrado.");
 			}
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
